@@ -175,6 +175,11 @@ html,body{height:100%;font-family:var(--ff);background:var(--bg);background-imag
 #toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:9px 18px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:300;}
 #toast.show{opacity:1;}
 
+/* Tab bar */
+#tab-bar{display:flex;gap:0;background:var(--card);border-radius:999px;padding:3px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.tab-btn{flex:1;padding:9px;border-radius:999px;border:none;font-size:15px;font-family:inherit;cursor:pointer;background:transparent;color:var(--sub);transition:all .2s;font-weight:600;}
+.tab-btn.active{background:var(--accent);color:#fff;}
+
 /* Print */
 @media print{
   #lock-screen,#top-row,#streak-bar,#goal-bar-wrap,#search-bar,#filter-row,
@@ -221,6 +226,12 @@ html,body{height:100%;font-family:var(--ff);background:var(--bg);background-imag
     <div class="goal-track"><div class="goal-fill" id="goal-fill" style="width:0%"></div></div>
   </div>
 
+  <div id="tab-bar">
+    <button class="tab-btn active" id="tab-write" onclick="switchTab('write')">✏️ เขียน</button>
+    <button class="tab-btn" id="tab-feed" onclick="switchTab('feed')">📖 โพส</button>
+  </div>
+
+  <div id="feed-view" style="display:none">
   <input id="search-bar" type="text" placeholder="ค้นหาโพส..." oninput="applyFilter()">
 
   <div id="filter-row">
@@ -253,7 +264,9 @@ html,body{height:100%;font-family:var(--ff);background:var(--bg);background-imag
   </div>
 
   <div id="feed"></div>
+  </div><!-- /feed-view -->
 
+  <div id="write-view">
   <div id="entry-box">
     <div class="rich-toolbar">
       <button class="rt-btn" onclick="insertFmt('**','**')"><b>B</b></button>
@@ -280,6 +293,7 @@ html,body{height:100%;font-family:var(--ff);background:var(--bg);background-imag
 
   <button id="save-btn" onclick="savePost()">บันทึกโพส</button>
   <button id="cancel-edit-btn" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+  </div><!-- /write-view -->
 </div>
 
 <!-- Settings -->
@@ -538,10 +552,10 @@ function renderFeed(posts){var feed=document.getElementById('feed');if(!posts||!
 function addSwipe(){document.querySelectorAll('.post-card').forEach(card=>{var id=card.dataset.id;var sx=0,dx=0;card.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{ passive:true });card.addEventListener('touchmove',e=>{dx=e.touches[0].clientX-sx;if(dx<0){card.style.transform='translateX('+Math.max(dx,-80)+'px)';var bg=card.querySelector('.swipe-del-bg');if(bg)bg.style.opacity=Math.min(1,-dx/80);}},{ passive:true });card.addEventListener('touchend',()=>{if(dx<-60){if(confirm('ลบโพสนี้?'))deletePost(id);}card.style.transform='';var bg=card.querySelector('.swipe-del-bg');if(bg)bg.style.opacity=0;dx=0;});});}
 
 /* Save */
-function savePost(){var content=document.getElementById('entry-input').value.trim();if(!content)return;var btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='กำลังบันทึก...';var params={action:editingId?'update':'save',content,mood:selectedMood,imageUrl:pendingImages.join(','),tags:document.getElementById('tags-input').value};if(editingId)params.id=editingId;apiPost(params).then(()=>{document.getElementById('entry-input').value='';document.getElementById('tags-input').value='';document.getElementById('img-preview').innerHTML='';document.getElementById('word-count').textContent='0 คำ';document.getElementById('tag-suggestions').innerHTML='';pendingImages=[];clearDraft();selectedMood='';document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));editingId=null;btn.disabled=false;btn.textContent='บันทึกโพส';document.getElementById('cancel-edit-btn').style.display='none';return apiGet({action:'list'});}).then(data=>{allPosts=Array.isArray(data)?data:[];buildTagFilter();calcStreak();showOnThisDay();updateGoal();applyFilter();}).catch(()=>{btn.disabled=false;btn.textContent='บันทึกโพส';});}
+function savePost(){var content=document.getElementById('entry-input').value.trim();if(!content)return;switchTab('write');var btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='กำลังบันทึก...';var params={action:editingId?'update':'save',content,mood:selectedMood,imageUrl:pendingImages.join(','),tags:document.getElementById('tags-input').value};if(editingId)params.id=editingId;apiPost(params).then(()=>{document.getElementById('entry-input').value='';document.getElementById('tags-input').value='';document.getElementById('img-preview').innerHTML='';document.getElementById('word-count').textContent='0 คำ';document.getElementById('tag-suggestions').innerHTML='';pendingImages=[];clearDraft();selectedMood='';document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));editingId=null;btn.disabled=false;btn.textContent='บันทึกโพส';document.getElementById('cancel-edit-btn').style.display='none';return apiGet({action:'list'});}).then(data=>{allPosts=Array.isArray(data)?data:[];buildTagFilter();calcStreak();showOnThisDay();updateGoal();applyFilter();}).catch(()=>{btn.disabled=false;btn.textContent='บันทึกโพส';});}
 
 /* Edit */
-function startEdit(id){var p=allPosts.find(x=>x.id===id);if(!p)return;editingId=id;document.getElementById('entry-input').value=p.content;document.getElementById('tags-input').value=p.tags||'';selectMood(p.mood||'');pendingImages=(p.imageUrl||'').split(',').map(u=>u.trim()).filter(Boolean);document.getElementById('img-preview').innerHTML=pendingImages.map(u=>'<img src="'+u+'">').join('');document.getElementById('save-btn').textContent='อัพเดตโพส';document.getElementById('cancel-edit-btn').style.display='block';onEntryInput();document.getElementById('entry-input').scrollIntoView({behavior:'smooth'});document.getElementById('entry-input').focus();}
+function startEdit(id){var p=allPosts.find(x=>x.id===id);if(!p)return;switchTab('write');editingId=id;document.getElementById('entry-input').value=p.content;document.getElementById('tags-input').value=p.tags||'';selectMood(p.mood||'');pendingImages=(p.imageUrl||'').split(',').map(u=>u.trim()).filter(Boolean);document.getElementById('img-preview').innerHTML=pendingImages.map(u=>'<img src="'+u+'">').join('');document.getElementById('save-btn').textContent='อัพเดตโพส';document.getElementById('cancel-edit-btn').style.display='block';onEntryInput();document.getElementById('entry-input').scrollIntoView({behavior:'smooth'});document.getElementById('entry-input').focus();}
 function cancelEdit(){editingId=null;selectedMood='';pendingImages=[];document.getElementById('entry-input').value='';document.getElementById('tags-input').value='';document.getElementById('img-preview').innerHTML='';document.getElementById('save-btn').textContent='บันทึกโพส';document.getElementById('cancel-edit-btn').style.display='none';document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));loadDraft();}
 
 /* Delete */
@@ -581,6 +595,15 @@ async function restoreJson(file){if(!file)return;var reader=new FileReader();rea
 function requestNotify(){if(!('Notification' in window)){toast('Browser ไม่รองรับ');return;}Notification.requestPermission().then(p=>{if(p==='granted'){localStorage.setItem('appdiary_notify','1');toast('เปิดการแจ้งเตือนแล้ว');}else toast('กรุณาอนุญาต notification ก่อน');});}
 function disableNotify(){localStorage.setItem('appdiary_notify','0');toast('ปิดการแจ้งเตือนแล้ว');}
 function checkReminder(){if(localStorage.getItem('appdiary_notify')!=='1'||Notification.permission!=='granted')return;var today=new Date().toDateString();if(!allPosts.some(p=>p.createdAt&&new Date(p.createdAt).toDateString()===today))new Notification('AppDiary 📖',{body:'วันนี้ยังไม่ได้เขียน diary เลยนะ!'});}
+
+/* Tab switch */
+function switchTab(tab){
+  var isWrite=tab==='write';
+  document.getElementById('write-view').style.display=isWrite?'contents':'none';
+  document.getElementById('feed-view').style.display=isWrite?'none':'contents';
+  document.getElementById('tab-write').classList.toggle('active',isWrite);
+  document.getElementById('tab-feed').classList.toggle('active',!isWrite);
+}
 
 /* Settings */
 function openSettings(){document.getElementById('imgbb-setting').value=localStorage.getItem('appdiary_imgbb')||'';document.getElementById('settings-overlay').classList.add('open');}
