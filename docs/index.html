@@ -7,270 +7,403 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
   <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  height: 100%; font-family: 'Sarabun', sans-serif;
-  background: #f0f0f0;
-  background-image: radial-gradient(#ccc 1px, transparent 1px);
-  background-size: 18px 18px;
-  color: #222; -webkit-font-smoothing: antialiased;
+html, body { height: 100%; font-family: 'Sarabun', sans-serif; background: #f0f0f0; background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 18px 18px; color: #222; -webkit-font-smoothing: antialiased; }
+
+/* ── Lock screen ── */
+#lock-screen {
+  position: fixed; inset: 0; background: #111;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 999;
 }
-#loading {
-  display: flex; align-items: center; justify-content: center;
-  height: 100vh; font-size: 16px; color: #888;
+#lock-screen .lock-icon { font-size: 52px; }
+#lock-screen .lock-title { color: #fff; font-size: 22px; font-weight: 600; }
+#pin-input {
+  width: 200px; padding: 14px; border-radius: 12px; border: none;
+  background: #222; color: #fff; font-size: 24px; text-align: center; outline: none; letter-spacing: 8px;
 }
-#app {
-  display: flex; flex-direction: column;
-  min-height: 100vh; max-width: 430px; margin: 0 auto;
-  padding: 20px 16px 32px; gap: 16px;
+#pin-error { color: #e55; font-size: 14px; min-height: 20px; }
+#unlock-btn {
+  padding: 14px 40px; border-radius: 999px; border: none;
+  background: #2dca5a; color: #fff; font-size: 17px; font-family: inherit; font-weight: 600; cursor: pointer;
 }
-#datetime { text-align: center; color: #444; line-height: 1.4; }
-#datetime .dt-date { font-size: 18px; font-weight: 600; }
-#datetime .dt-time { font-size: 28px; font-weight: 600; letter-spacing: 2px; }
-#search-bar {
-  width: 100%; padding: 14px 20px; border-radius: 999px; border: none;
-  background: #555; color: #fff; font-size: 16px; font-family: inherit;
-  outline: none; text-align: center;
-}
+
+/* ── App ── */
+#loading { display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 16px; color: #888; }
+#app { display: flex; flex-direction: column; min-height: 100vh; max-width: 430px; margin: 0 auto; padding: 20px 16px 32px; gap: 16px; }
+
+/* datetime + settings row */
+#top-row { display: flex; align-items: flex-start; justify-content: space-between; }
+#datetime { flex: 1; text-align: center; color: #444; line-height: 1.4; }
+#datetime .dt-date { font-size: 17px; font-weight: 600; }
+#datetime .dt-time { font-size: 26px; font-weight: 600; letter-spacing: 2px; }
+#settings-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; color: #888; }
+
+/* search */
+#search-bar { width: 100%; padding: 14px 20px; border-radius: 999px; border: none; background: #555; color: #fff; font-size: 16px; font-family: inherit; outline: none; text-align: center; }
 #search-bar::placeholder { color: #ccc; }
 
-/* entry box */
-#entry-box {
-  background: #1a1a1a; border-radius: 24px;
-  padding: 20px; display: flex; flex-direction: column; gap: 14px;
-  min-height: 340px;
-}
-#entry-input {
-  flex: 1; background: transparent; border: none;
-  color: #fff; font-size: 17px; font-family: inherit;
-  line-height: 1.7; resize: none; outline: none;
-  min-height: 220px; width: 100%;
-}
-#entry-input::placeholder { color: #555; }
-
-/* mood selector */
-#mood-row { display: flex; gap: 10px; justify-content: center; }
-.mood-btn {
-  font-size: 26px; background: none; border: 2px solid transparent;
-  border-radius: 12px; padding: 4px 10px; cursor: pointer; transition: border-color .15s;
-}
-.mood-btn.selected { border-color: #fff; background: rgba(255,255,255,.1); }
-
-/* draft indicator */
-#draft-hint { font-size: 12px; color: #555; text-align: right; }
-
-/* save / edit mode */
-#save-btn {
-  width: 100%; padding: 18px; border-radius: 999px; border: none;
-  background: #2dca5a; color: #fff; font-size: 18px;
-  font-family: inherit; font-weight: 600; cursor: pointer; transition: opacity .2s;
-}
-#save-btn:active { opacity: .8; }
-#save-btn:disabled { background: #aaa; cursor: default; }
-#cancel-edit-btn {
-  width: 100%; padding: 12px; border-radius: 999px; border: 2px solid #888;
-  background: transparent; color: #555; font-size: 15px;
-  font-family: inherit; cursor: pointer; display: none;
-}
+/* mood filter */
+#mood-filter { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.mf-btn { padding: 6px 14px; border-radius: 999px; border: 2px solid #ccc; background: #fff; font-size: 15px; cursor: pointer; transition: all .15s; }
+.mf-btn.active { border-color: #333; background: #333; color: #fff; }
 
 /* feed */
 #feed { display: flex; flex-direction: column; gap: 12px; }
-.post-card {
-  background: #fff; border-radius: 16px; padding: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-}
+.post-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .post-date { font-size: 12px; color: #aaa; }
 .post-mood { font-size: 20px; }
 .post-content { font-size: 15px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.post-images { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.post-images img { width: calc(50% - 3px); border-radius: 10px; object-fit: cover; aspect-ratio: 4/3; cursor: pointer; }
 .post-actions { margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px; }
 .edit-btn { background: none; border: none; color: #4a90d9; font-size: 13px; cursor: pointer; padding: 4px 8px; }
 .del-btn  { background: none; border: none; color: #e55; font-size: 13px; cursor: pointer; padding: 4px 8px; }
+
+/* entry box */
+#entry-box { background: #1a1a1a; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 300px; }
+#entry-input { flex: 1; background: transparent; border: none; color: #fff; font-size: 17px; font-family: inherit; line-height: 1.7; resize: none; outline: none; min-height: 180px; width: 100%; }
+#entry-input::placeholder { color: #555; }
+.entry-toolbar { display: flex; align-items: center; justify-content: space-between; }
+#mood-row { display: flex; gap: 8px; }
+.mood-btn { font-size: 24px; background: none; border: 2px solid transparent; border-radius: 10px; padding: 3px 8px; cursor: pointer; transition: border-color .15s; }
+.mood-btn.selected { border-color: #fff; background: rgba(255,255,255,.1); }
+#img-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; padding: 4px; }
+#img-preview { display: flex; flex-wrap: wrap; gap: 6px; }
+#img-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; }
+#draft-hint { font-size: 12px; color: #555; text-align: right; }
+
+/* buttons */
+#save-btn { width: 100%; padding: 18px; border-radius: 999px; border: none; background: #2dca5a; color: #fff; font-size: 18px; font-family: inherit; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+#save-btn:active { opacity: .8; }
+#save-btn:disabled { background: #aaa; cursor: default; }
+#cancel-edit-btn { width: 100%; padding: 12px; border-radius: 999px; border: 2px solid #888; background: transparent; color: #555; font-size: 15px; font-family: inherit; cursor: pointer; display: none; }
+
+/* Settings modal */
+#settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
+#settings-overlay.open { display: flex; }
+#settings-modal { background: #fff; border-radius: 24px 24px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 430px; }
+#settings-modal h3 { font-size: 18px; margin-bottom: 20px; }
+.setting-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.setting-row label { font-size: 14px; color: #666; font-weight: 600; }
+.setting-input { padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; font-family: inherit; outline: none; }
+.setting-actions { display: flex; gap: 8px; }
+.s-btn { flex: 1; padding: 10px; border-radius: 999px; border: none; font-size: 14px; font-family: inherit; cursor: pointer; }
+.s-btn.primary { background: #333; color: #fff; }
+.s-btn.danger  { background: #fee; color: #e55; }
+.s-btn.cancel  { background: #f0f0f0; color: #555; }
+
+/* lightbox */
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: none; align-items: center; justify-content: center; z-index: 200; }
+#lightbox.open { display: flex; }
+#lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 12px; }
   </style>
 </head>
 <body>
-  <div id="loading">กำลังโหลด...</div>
-  <div id="app" style="display:none">
+
+<!-- Lock screen -->
+<div id="lock-screen" style="display:none">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title">AppDiary</div>
+  <input type="password" id="pin-input" maxlength="6" placeholder="••••" inputmode="numeric" onkeydown="if(event.key==='Enter')unlock()">
+  <div id="pin-error"></div>
+  <button id="unlock-btn" onclick="unlock()">ปลดล็อค</button>
+</div>
+
+<div id="loading">กำลังโหลด...</div>
+
+<div id="app" style="display:none">
+  <div id="top-row">
+    <div style="width:32px"></div>
     <div id="datetime">
       <div class="dt-date" id="dt-date"></div>
       <div class="dt-time" id="dt-time"></div>
     </div>
+    <button id="settings-btn" onclick="openSettings()">⚙️</button>
+  </div>
 
-    <input id="search-bar" type="text" placeholder="ช่องสำหรับค้นหาโพส" oninput="onSearch(this.value)">
-    <div id="feed"></div>
+  <input id="search-bar" type="text" placeholder="ช่องสำหรับค้นหาโพส" oninput="applyFilter()">
 
-    <div id="entry-box">
-      <textarea id="entry-input" placeholder="ช่องใส่ข้อมูลเพิ่มโพส" oninput="onDraftInput()"></textarea>
+  <div id="mood-filter">
+    <button class="mf-btn active" onclick="filterMood('', this)">ทั้งหมด</button>
+    <button class="mf-btn" onclick="filterMood('😊', this)">😊</button>
+    <button class="mf-btn" onclick="filterMood('😐', this)">😐</button>
+    <button class="mf-btn" onclick="filterMood('😢', this)">😢</button>
+    <button class="mf-btn" onclick="filterMood('😡', this)">😡</button>
+  </div>
+
+  <div id="feed"></div>
+
+  <div id="entry-box">
+    <textarea id="entry-input" placeholder="ช่องใส่ข้อมูลเพิ่มโพส" oninput="onDraftInput()"></textarea>
+    <div class="entry-toolbar">
       <div id="mood-row">
         <button class="mood-btn" onclick="selectMood('😊')">😊</button>
         <button class="mood-btn" onclick="selectMood('😐')">😐</button>
         <button class="mood-btn" onclick="selectMood('😢')">😢</button>
         <button class="mood-btn" onclick="selectMood('😡')">😡</button>
       </div>
-      <div id="draft-hint"></div>
+      <button id="img-btn" onclick="document.getElementById('img-input').click()">📷</button>
+      <input type="file" id="img-input" accept="image/*" multiple style="display:none" onchange="handleImages(this.files)">
     </div>
-
-    <button id="save-btn" onclick="savePost()">บันทึกโพส</button>
-    <button id="cancel-edit-btn" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+    <div id="img-preview"></div>
+    <div id="draft-hint"></div>
   </div>
 
-  <script>
+  <button id="save-btn" onclick="savePost()">บันทึกโพส</button>
+  <button id="cancel-edit-btn" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+</div>
+
+<!-- Settings modal -->
+<div id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div id="settings-modal">
+    <h3>⚙️ ตั้งค่า</h3>
+    <div class="setting-row">
+      <label>🔒 PIN (ล็อค AppDiary)</label>
+      <input class="setting-input" type="password" id="pin-setting" inputmode="numeric" maxlength="6" placeholder="ใส่ PIN ใหม่">
+      <div class="setting-actions">
+        <button class="s-btn primary" onclick="savePin()">บันทึก PIN</button>
+        <button class="s-btn danger"  onclick="removePin()">ลบ PIN</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>🖼 imgbb API Key (สำหรับอัพโหลดรูป)</label>
+      <input class="setting-input" type="text" id="imgbb-setting" placeholder="ใส่ API Key จาก imgbb.com">
+      <div class="setting-actions">
+        <button class="s-btn primary" onclick="saveImgbb()">บันทึก</button>
+      </div>
+    </div>
+    <button class="s-btn cancel" style="width:100%" onclick="closeSettings()">ปิด</button>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="closeLightbox()"><img id="lightbox-img" src=""></div>
+
+<script>
 const API = 'https://script.google.com/macros/s/AKfycbxVB-NO3oX8_2tqqfvxMIs08AmN4z5tmx-6ARrDcLiSZNMmXuygl0kraEkCX-tWxm9htw/exec';
 const DRAFT_KEY = 'appdiary_draft';
 var allPosts = [];
 var selectedMood = '';
+var activeMoodFilter = '';
 var editingId = null;
+var pendingImages = [];
 
-function apiGet(params) {
-  return fetch(API + '?' + new URLSearchParams(params)).then(function(r) { return r.json(); });
-}
-function apiPost(params) {
-  return fetch(API, { method: 'POST', body: new URLSearchParams(params) }).then(function(r) { return r.json(); });
-}
+/* ── API helpers ── */
+function apiGet(params) { return fetch(API + '?' + new URLSearchParams(params)).then(function(r){ return r.json(); }); }
+function apiPost(params) { return fetch(API, { method:'POST', body: new URLSearchParams(params) }).then(function(r){ return r.json(); }); }
 
-/* ── init ── */
-function init() {
-  loadDraft();
-  apiGet({ action: 'list' }).then(function(data) {
-    allPosts = Array.isArray(data) ? data : [];
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    renderFeed(allPosts);
-  }).catch(function() {
-    document.getElementById('loading').textContent = 'โหลดไม่สำเร็จ';
-  });
-}
-
-/* ── draft ── */
-function onDraftInput() {
-  if (editingId) return;
-  var content = document.getElementById('entry-input').value;
-  localStorage.setItem(DRAFT_KEY, content);
-  document.getElementById('draft-hint').textContent = content ? 'บันทึก draft อัตโนมัติ' : '';
-}
-function loadDraft() {
-  var draft = localStorage.getItem(DRAFT_KEY) || '';
-  if (draft) {
-    document.getElementById('entry-input').value = draft;
-    document.getElementById('draft-hint').textContent = 'กู้คืน draft';
+/* ── PIN / Lock ── */
+function checkLock() {
+  var pin = localStorage.getItem('appdiary_pin');
+  if (pin) {
+    document.getElementById('lock-screen').style.display = 'flex';
+  } else {
+    startApp();
   }
 }
-function clearDraft() {
-  localStorage.removeItem(DRAFT_KEY);
-  document.getElementById('draft-hint').textContent = '';
+function unlock() {
+  var pin = localStorage.getItem('appdiary_pin');
+  var input = document.getElementById('pin-input').value;
+  if (input === pin) {
+    document.getElementById('lock-screen').style.display = 'none';
+    startApp();
+  } else {
+    document.getElementById('pin-error').textContent = 'PIN ไม่ถูกต้อง';
+    document.getElementById('pin-input').value = '';
+  }
+}
+function savePin() {
+  var v = document.getElementById('pin-setting').value.trim();
+  if (!v) { alert('ใส่ PIN ก่อนนะครับ'); return; }
+  localStorage.setItem('appdiary_pin', v);
+  document.getElementById('pin-setting').value = '';
+  alert('บันทึก PIN แล้ว');
+}
+function removePin() {
+  localStorage.removeItem('appdiary_pin');
+  document.getElementById('pin-setting').value = '';
+  alert('ลบ PIN แล้ว');
 }
 
-/* ── mood ── */
+/* ── imgbb ── */
+function saveImgbb() {
+  var k = document.getElementById('imgbb-setting').value.trim();
+  if (!k) { alert('ใส่ API Key ก่อนนะครับ'); return; }
+  localStorage.setItem('appdiary_imgbb', k);
+  alert('บันทึก API Key แล้ว');
+}
+async function uploadToImgbb(file) {
+  var key = localStorage.getItem('appdiary_imgbb');
+  if (!key) { alert('ตั้งค่า imgbb API Key ใน ⚙️ ก่อนนะครับ'); return null; }
+  var form = new FormData();
+  form.append('key', key); form.append('image', file);
+  var res = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body: form });
+  var data = await res.json();
+  return data && data.data ? data.data.url : null;
+}
+async function handleImages(files) {
+  var btn = document.getElementById('img-btn');
+  btn.textContent = '⏳'; btn.disabled = true;
+  for (var i = 0; i < files.length; i++) {
+    var url = await uploadToImgbb(files[i]);
+    if (url) {
+      pendingImages.push(url);
+      var img = document.createElement('img');
+      img.src = url; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover'; img.style.borderRadius='10px';
+      document.getElementById('img-preview').appendChild(img);
+    }
+  }
+  btn.textContent = '📷'; btn.disabled = false;
+  document.getElementById('img-input').value = '';
+}
+
+/* ── Draft ── */
+function onDraftInput() {
+  if (editingId) return;
+  var c = document.getElementById('entry-input').value;
+  localStorage.setItem(DRAFT_KEY, c);
+  document.getElementById('draft-hint').textContent = c ? 'บันทึก draft อัตโนมัติ' : '';
+}
+function loadDraft() {
+  var d = localStorage.getItem(DRAFT_KEY) || '';
+  if (d) { document.getElementById('entry-input').value = d; document.getElementById('draft-hint').textContent = 'กู้คืน draft'; }
+}
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); document.getElementById('draft-hint').textContent = ''; }
+
+/* ── Mood selector ── */
 function selectMood(m) {
   selectedMood = (selectedMood === m) ? '' : m;
-  document.querySelectorAll('.mood-btn').forEach(function(btn) {
-    btn.classList.toggle('selected', btn.textContent === selectedMood);
-  });
+  document.querySelectorAll('.mood-btn').forEach(function(b){ b.classList.toggle('selected', b.textContent === selectedMood); });
 }
 
-/* ── feed ── */
+/* ── Mood filter ── */
+function filterMood(m, btn) {
+  activeMoodFilter = m;
+  document.querySelectorAll('.mf-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  applyFilter();
+}
+
+/* ── Search + Filter ── */
+function applyFilter() {
+  var q = document.getElementById('search-bar').value.toLowerCase().trim();
+  var filtered = allPosts.filter(function(p) {
+    var matchMood = !activeMoodFilter || p.mood === activeMoodFilter;
+    var matchQ = !q || String(p.content||'').toLowerCase().indexOf(q) !== -1;
+    return matchMood && matchQ;
+  });
+  renderFeed(filtered);
+}
+
+/* ── Feed ── */
 function renderFeed(posts) {
   var feed = document.getElementById('feed');
   if (!posts || posts.length === 0) { feed.innerHTML = ''; return; }
   feed.innerHTML = posts.map(function(p) {
-    var date = p.createdAt ? new Date(p.createdAt).toLocaleString('th-TH', {
-      timeZone: 'Asia/Bangkok', year: 'numeric', month: 'short',
-      day: 'numeric', hour: '2-digit', minute: '2-digit'
-    }) : '';
-    var text = String(p.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    var mood = p.mood || '';
+    var date = p.createdAt ? new Date(p.createdAt).toLocaleString('th-TH', { timeZone:'Asia/Bangkok', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+    var text = String(p.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var imgs = (p.imageUrl||'').split(',').map(function(u){ return u.trim(); }).filter(Boolean);
+    var imgHtml = imgs.length ? '<div class="post-images">' + imgs.map(function(u){ return '<img src="'+u+'" onclick="openLightbox(\''+u+'\')">'; }).join('') + '</div>' : '';
     return '<div class="post-card">'
-      + '<div class="post-header">'
-      + '<div class="post-date">' + date + '</div>'
-      + (mood ? '<div class="post-mood">' + mood + '</div>' : '')
-      + '</div>'
-      + '<div class="post-content">' + text + '</div>'
-      + '<div class="post-actions">'
-      + '<button class="edit-btn" onclick="startEdit(\'' + p.id + '\')">แก้ไข</button>'
-      + '<button class="del-btn" onclick="deletePost(\'' + p.id + '\')">ลบ</button>'
-      + '</div></div>';
+      + '<div class="post-header"><div class="post-date">'+date+'</div>'+(p.mood?'<div class="post-mood">'+p.mood+'</div>':'')+'</div>'
+      + '<div class="post-content">'+text+'</div>'
+      + imgHtml
+      + '<div class="post-actions"><button class="edit-btn" onclick="startEdit(\''+p.id+'\')">แก้ไข</button><button class="del-btn" onclick="deletePost(\''+p.id+'\')">ลบ</button></div>'
+      + '</div>';
   }).join('');
 }
 
-/* ── save / update ── */
+/* ── Save / Update ── */
 function savePost() {
-  var input = document.getElementById('entry-input');
-  var content = input.value.trim();
+  var content = document.getElementById('entry-input').value.trim();
   if (!content) return;
   var btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-
+  var imgUrl = pendingImages.join(',');
   var params = editingId
-    ? { action: 'update', id: editingId, content: content, mood: selectedMood }
-    : { action: 'save', content: content, mood: selectedMood };
-
+    ? { action:'update', id:editingId, content:content, mood:selectedMood, imageUrl:imgUrl }
+    : { action:'save', content:content, mood:selectedMood, imageUrl:imgUrl };
   apiPost(params).then(function() {
-    input.value = ''; clearDraft(); selectedMood = '';
-    document.querySelectorAll('.mood-btn').forEach(function(b) { b.classList.remove('selected'); });
-    editingId = null;
-    btn.disabled = false; btn.textContent = 'บันทึกโพส';
+    document.getElementById('entry-input').value = '';
+    document.getElementById('img-preview').innerHTML = '';
+    pendingImages = []; clearDraft(); selectedMood = '';
+    document.querySelectorAll('.mood-btn').forEach(function(b){ b.classList.remove('selected'); });
+    editingId = null; btn.disabled = false; btn.textContent = 'บันทึกโพส';
     document.getElementById('cancel-edit-btn').style.display = 'none';
-    return apiGet({ action: 'list' });
+    return apiGet({ action:'list' });
   }).then(function(data) {
     allPosts = Array.isArray(data) ? data : [];
-    renderFeed(allPosts);
-  }).catch(function() {
-    btn.disabled = false; btn.textContent = 'บันทึกโพส';
-  });
+    applyFilter();
+  }).catch(function() { btn.disabled = false; btn.textContent = 'บันทึกโพส'; });
 }
 
-/* ── edit ── */
+/* ── Edit ── */
 function startEdit(id) {
-  var post = allPosts.find(function(p) { return p.id === id; });
-  if (!post) return;
+  var p = allPosts.find(function(x){ return x.id === id; });
+  if (!p) return;
   editingId = id;
-  document.getElementById('entry-input').value = post.content;
-  selectMood(post.mood || '');
+  document.getElementById('entry-input').value = p.content;
+  selectMood(p.mood || '');
+  pendingImages = (p.imageUrl||'').split(',').map(function(u){ return u.trim(); }).filter(Boolean);
+  var prev = document.getElementById('img-preview');
+  prev.innerHTML = pendingImages.map(function(u){ return '<img src="'+u+'" style="width:72px;height:72px;object-fit:cover;border-radius:10px">'; }).join('');
   document.getElementById('save-btn').textContent = 'อัพเดตโพส';
   document.getElementById('cancel-edit-btn').style.display = 'block';
-  document.getElementById('entry-input').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('entry-input').scrollIntoView({ behavior:'smooth' });
   document.getElementById('entry-input').focus();
 }
 function cancelEdit() {
-  editingId = null; selectedMood = '';
+  editingId = null; selectedMood = ''; pendingImages = [];
   document.getElementById('entry-input').value = '';
+  document.getElementById('img-preview').innerHTML = '';
   document.getElementById('save-btn').textContent = 'บันทึกโพส';
   document.getElementById('cancel-edit-btn').style.display = 'none';
-  document.querySelectorAll('.mood-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.querySelectorAll('.mood-btn').forEach(function(b){ b.classList.remove('selected'); });
   loadDraft();
 }
 
-/* ── delete ── */
+/* ── Delete ── */
 function deletePost(id) {
   if (!confirm('ลบโพสนี้?')) return;
-  apiGet({ action: 'delete', id: id }).then(function() {
-    allPosts = allPosts.filter(function(p) { return p.id !== id; });
-    renderFeed(allPosts);
+  apiGet({ action:'delete', id:id }).then(function() {
+    allPosts = allPosts.filter(function(p){ return p.id !== id; });
+    applyFilter();
   });
 }
 
-/* ── search ── */
-function onSearch(q) {
-  var query = q.toLowerCase().trim();
-  if (!query) { renderFeed(allPosts); return; }
-  renderFeed(allPosts.filter(function(p) {
-    return String(p.content || '').toLowerCase().indexOf(query) !== -1;
-  }));
+/* ── Settings ── */
+function openSettings() {
+  document.getElementById('imgbb-setting').value = localStorage.getItem('appdiary_imgbb') || '';
+  document.getElementById('settings-overlay').classList.add('open');
 }
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
 
-/* ── clock ── */
+/* ── Lightbox ── */
+function openLightbox(url) { document.getElementById('lightbox-img').src = url; document.getElementById('lightbox').classList.add('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+/* ── Clock ── */
 function updateClock() {
   var now = new Date();
-  document.getElementById('dt-date').textContent = now.toLocaleDateString('th-TH', {
-    timeZone: 'Asia/Bangkok', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-  document.getElementById('dt-time').textContent = now.toLocaleTimeString('th-TH', {
-    timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-  });
+  document.getElementById('dt-date').textContent = now.toLocaleDateString('th-TH', { timeZone:'Asia/Bangkok', weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('dt-time').textContent = now.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+}
+
+/* ── Start ── */
+function startApp() {
+  loadDraft();
+  apiGet({ action:'list' }).then(function(data) {
+    allPosts = Array.isArray(data) ? data : [];
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    renderFeed(allPosts);
+  }).catch(function() { document.getElementById('loading').textContent = 'โหลดไม่สำเร็จ'; });
 }
 
 window.onload = function() {
-  updateClock(); setInterval(updateClock, 1000); init();
+  updateClock(); setInterval(updateClock, 1000);
+  checkLock();
 };
-  </script>
+</script>
 </body>
 </html>
