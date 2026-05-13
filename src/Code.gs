@@ -14,8 +14,7 @@ function doGet(e) {
   if (action === 'list')   return jsonRes(getDiaries());
   if (action === 'delete') return jsonRes(deleteDiary(e.parameter.id));
   return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
-    .setTitle('AppDiary')
+    .evaluate().setTitle('AppDiary')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -25,9 +24,7 @@ function doPost(e) {
     if (p.action === 'save')   return jsonRes(saveDiary(p));
     if (p.action === 'update') return jsonRes(updateDiary(p));
     return jsonRes({ error: 'unknown action' });
-  } catch (err) {
-    return jsonRes({ error: err.toString() });
-  }
+  } catch (err) { return jsonRes({ error: err.toString() }); }
 }
 
 function jsonRes(data) {
@@ -40,16 +37,15 @@ function getSheet() {
   let sheet = ss.getSheetByName('Diaries');
   if (!sheet) {
     sheet = ss.insertSheet('Diaries');
-    sheet.appendRow(['id', 'วันที่เขียนโพส', 'ข้อมูลโพส', 'mood', 'imageUrl']);
-    sheet.setColumnWidth(1, 220); sheet.setColumnWidth(2, 160);
-    sheet.setColumnWidth(3, 400); sheet.setColumnWidth(4, 60);
-    sheet.setColumnWidth(5, 300);
+    sheet.appendRow(['id','วันที่เขียนโพส','ข้อมูลโพส','mood','imageUrl','tags']);
+    [1,2,3,4,5,6].forEach(function(c,i){ sheet.setColumnWidth(c,[220,160,400,60,300,200][i]); });
     return sheet;
   }
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  if (!headers.includes('mood')) sheet.getRange(1, headers.length + 1).setValue('mood');
-  const headers2 = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  if (!headers2.includes('imageUrl')) sheet.getRange(1, headers2.length + 1).setValue('imageUrl');
+  const needed = ['mood','imageUrl','tags'];
+  const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+  needed.forEach(function(col){
+    if (!headers.includes(col)) sheet.getRange(1, sheet.getLastColumn()+1).setValue(col);
+  });
   return sheet;
 }
 
@@ -58,47 +54,56 @@ function getDiaries() {
     const sheet = getSheet();
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return [];
-    return data.slice(1).map(function(row) {
-      return { id: String(row[0]), createdAt: String(row[1]), content: String(row[2]), mood: String(row[3] || ''), imageUrl: String(row[4] || '') };
+    const h = data[0];
+    const idx = function(name){ return h.indexOf(name); };
+    return data.slice(1).map(function(r){
+      return {
+        id: String(r[0]), createdAt: String(r[1]),
+        content: String(r[2]), mood: String(r[idx('mood')]||''),
+        imageUrl: String(r[idx('imageUrl')]||''), tags: String(r[idx('tags')]||'')
+      };
     }).reverse();
-  } catch (e) { return []; }
+  } catch(e){ return []; }
 }
 
 function saveDiary(p) {
   try {
     const sheet = getSheet();
-    const id = Utilities.getUuid();
-    sheet.appendRow([id, new Date(), p.content || '', p.mood || '', p.imageUrl || '']);
-    return { success: true, id: id };
-  } catch (e) { return { success: false, error: e.toString() }; }
+    const h = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+    const row = new Array(h.length).fill('');
+    row[0] = Utilities.getUuid(); row[1] = new Date();
+    row[2] = p.content||''; row[h.indexOf('mood')] = p.mood||'';
+    row[h.indexOf('imageUrl')] = p.imageUrl||''; row[h.indexOf('tags')] = p.tags||'';
+    sheet.appendRow(row);
+    return { success:true, id:row[0] };
+  } catch(e){ return { success:false, error:e.toString() }; }
 }
 
 function updateDiary(p) {
   try {
     const sheet = getSheet();
     const data = sheet.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(p.id)) {
-        sheet.getRange(i + 1, 3).setValue(p.content || '');
-        sheet.getRange(i + 1, 4).setValue(p.mood || '');
-        sheet.getRange(i + 1, 5).setValue(p.imageUrl || '');
-        return { success: true };
+    const h = data[0];
+    for (let i=1;i<data.length;i++) {
+      if (String(data[i][0])===String(p.id)) {
+        sheet.getRange(i+1,3).setValue(p.content||'');
+        sheet.getRange(i+1,h.indexOf('mood')+1).setValue(p.mood||'');
+        sheet.getRange(i+1,h.indexOf('imageUrl')+1).setValue(p.imageUrl||'');
+        sheet.getRange(i+1,h.indexOf('tags')+1).setValue(p.tags||'');
+        return { success:true };
       }
     }
-    return { success: false, error: 'not found' };
-  } catch (e) { return { success: false, error: e.toString() }; }
+    return { success:false, error:'not found' };
+  } catch(e){ return { success:false, error:e.toString() }; }
 }
 
 function deleteDiary(id) {
   try {
     const sheet = getSheet();
     const data = sheet.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(id)) {
-        sheet.deleteRow(i + 1);
-        return { success: true };
-      }
+    for (let i=1;i<data.length;i++) {
+      if (String(data[i][0])===String(id)) { sheet.deleteRow(i+1); return { success:true }; }
     }
-    return { success: false };
-  } catch (e) { return { success: false, error: e.toString() }; }
+    return { success:false };
+  } catch(e){ return { success:false, error:e.toString() }; }
 }
